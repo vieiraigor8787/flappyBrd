@@ -111,13 +111,69 @@ function Progresso(){
     this.atualizarPontos(0)
 }
 
-const barreiras = new MultiplasBarreiras(700, 1200, 200, 400)
-const passaro = new Passaro(700)
-const areaJogo = document.querySelector('[wm-flappy]')
-areaJogo.appendChild(passaro.elemento)
-areaJogo.appendChild(new Progresso().elemento)
-barreiras.pares.forEach(par => areaJogo.appendChild(par.elemento))
-setInterval( () => {
-    barreiras.animar()
-    passaro.animar()
-},20 )
+// const barreiras = new MultiplasBarreiras(700, 1200, 200, 400)
+// const passaro = new Passaro(700)
+// const areaJogo = document.querySelector('[wm-flappy]')
+// areaJogo.appendChild(passaro.elemento)
+// areaJogo.appendChild(new Progresso().elemento)
+// barreiras.pares.forEach(par => areaJogo.appendChild(par.elemento))
+// setInterval( () => {
+//     barreiras.animar()
+//     passaro.animar()
+// },20 )
+
+function estaoSobrepostos(elemA, elemB) {
+    const a = elemA.getBoundingClientRect()
+    const b = elemB.getBoundingClientRect()
+
+    const horizontal = a.left + a.width >= b.left
+        && b.left + b.width >= a.left
+    const vertical = a.top + a.height >= b.top
+        && b.top + b.height >= a.top
+    return horizontal && vertical
+}
+
+function colisao(passaro, barreiras) {
+    let colidiu = false
+    barreiras.pares.forEach(parDeBarreiras => {
+        if(!colidiu){
+            const superior = parDeBarreiras.superior.elemento
+            const inferior = parDeBarreiras.inferior.elemento
+            colidiu = estaoSobrepostos(passaro.elemento, superior) 
+                || estaoSobrepostos(passaro.elemento, inferior)
+        }
+    })
+    return colidiu
+}
+
+function FlappyBird() {
+    let pontos = 0
+    // criando o ambiente
+    const areaJogo = document.querySelector('[wm-flappy]')
+    const altura = areaJogo.clientHeight
+    const largura = areaJogo.clientWidth
+    // criando os elementos
+    const progr = new Progresso()
+    const barreiras = new Barreira(altura, largura, 200, 400, 
+        () => progr.atualizarPontos(++pontos))
+    const passaro = new Passaro(altura)
+    
+    //adicionando elementos na tela
+    areaJogo.appendChild(progr.elemento)
+    areaJogo.appendChild(passaro.elemento)
+    barreiras.pares.forEach(par => areaJogo.appendChild(par.elemento))
+
+    this.start = () => {
+        //loop do jogo
+        const temporizador = setInterval( () => {
+            barreiras.animar()
+            passaro.animar()
+
+            if (colidiu(passaro, barreiras)) {
+                clearInterval(temporizador)
+            }
+        }, 20)
+    }
+}
+
+new FlappyBird().start()
